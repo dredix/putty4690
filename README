@@ -1,3 +1,15 @@
+---------------------- CHANGES ON PUTTY4690 --------------------------
+
+19/01/2012:
+  Support for IBM 4690 OS Telnet ESC key sequence has been added 
+  (for more information, see 
+  http://www-01.ibm.com/support/docview.wss?uid=pos1R1002172). 
+  The 4690 radio button on the Function Keys and Keypad options 
+  (Keyboard configuration) enables the support for this environment. 
+  The modification currently works on Windows only.
+
+------------------------- Original README ----------------------------
+
 This is the README for the source archive of PuTTY, a free Win32
 and Unix Telnet and SSH client.
 
