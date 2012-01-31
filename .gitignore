@@ -1,0 +1,14 @@
+# Compiled source #
+###################
+
+*.obj
+*.exe
+*.map
+*.res
+*.rsp
+Makefile.*
+charset/sbcsdat.c
+empty.h
+macosx/Makefile
+windows/DEVCPP/
+windows/MSVC/
