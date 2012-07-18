@@ -5778,6 +5778,12 @@ static int do_ssh2_transport(Ssh ssh, void *vin, int inlen,
 		break;
 	    }
 	}
+	if (!ssh->hostkey) {
+	    bombout(("Couldn't agree a host key algorithm (available: %s)",
+		     str ? str : "(null)"));
+	    crStop(0);
+	}
+
 	s->guessok = s->guessok &&
 	    first_in_commasep_string(hostkey_algs[0]->name, str, len);
 	ssh_pkt_getstring(pktin, &str, &len);    /* client->server cipher */
@@ -10037,6 +10043,12 @@ static void ssh_unthrottle(void *handle, int bufsize)
 	    }
 	}
     }
+
+    /*
+     * Now process any SSH connection data that was stashed in our
+     * queue while we were frozen.
+     */
+    ssh_process_queued_incoming_data(ssh);
 }
 
 void ssh_send_port_open(void *channel, char *hostname, int port, char *org)

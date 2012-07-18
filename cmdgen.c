@@ -257,11 +257,11 @@ static char *blobfp(char *alg, int bits, unsigned char *blob, int bloblen)
 int main(int argc, char **argv)
 {
     char *infile = NULL;
-    Filename *infilename, *outfilename;
+    Filename *infilename = NULL, *outfilename = NULL;
     enum { NOKEYGEN, RSA1, RSA2, DSA } keytype = NOKEYGEN;    
     char *outfile = NULL, *outfiletmp = NULL;
     enum { PRIVATE, PUBLIC, PUBLICO, FP, OPENSSH, SSHCOM } outtype = PRIVATE;
-    int bits = 1024;
+    int bits = 2048;
     char *comment = NULL, *origcomment = NULL;
     int change_passphrase = FALSE;
     int errs = FALSE, nogo = FALSE;

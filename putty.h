@@ -792,7 +792,7 @@ void cleanup_exit(int);
     X(INT, NONE, xterm_256_colour) \
     X(INT, NONE, system_colour) \
     X(INT, NONE, try_palette) \
-    X(INT, NONE, bold_colour) \
+    X(INT, NONE, bold_style) \
     X(INT, INT, colours) \
     /* Selection options */ \
     X(INT, NONE, mouse_is_xterm) \
@@ -1127,10 +1127,10 @@ void get_unitab(int codepage, wchar_t * unitab, int ftype);
 /*
  * Exports from wcwidth.c
  */
-int mk_wcwidth(wchar_t ucs);
-int mk_wcswidth(const wchar_t *pwcs, size_t n);
-int mk_wcwidth_cjk(wchar_t ucs);
-int mk_wcswidth_cjk(const wchar_t *pwcs, size_t n);
+int mk_wcwidth(unsigned int ucs);
+int mk_wcswidth(const unsigned int *pwcs, size_t n);
+int mk_wcwidth_cjk(unsigned int ucs);
+int mk_wcswidth_cjk(const unsigned int *pwcs, size_t n);
 
 /*
  * Exports from mscrypto.c
@@ -1258,7 +1258,7 @@ void setup_config_box(struct controlbox *b, int midsession,
  * Exports from minibidi.c.
  */
 typedef struct bidi_char {
-    wchar_t origwc, wc;
+    unsigned int origwc, wc;
     unsigned short index;
 } bidi_char;
 int do_bidi(bidi_char *line, int count);
@@ -1399,5 +1399,30 @@ void timer_change_notify(long next);
 #define add_session_to_jumplist(x) ((void)0)
 #define remove_session_from_jumplist(x) ((void)0)
 #endif
+
+/* SURROGATE PAIR */
+#ifndef IS_HIGH_SURROGATE
+#define HIGH_SURROGATE_START 0xd800
+#define HIGH_SURROGATE_END 0xdbff
+#define LOW_SURROGATE_START 0xdc00
+#define LOW_SURROGATE_END 0xdfff
+
+#define IS_HIGH_SURROGATE(wch) (((wch) >= HIGH_SURROGATE_START) && \
+                                ((wch) <= HIGH_SURROGATE_END))
+#define IS_LOW_SURROGATE(wch) (((wch) >= LOW_SURROGATE_START) && \
+                               ((wch) <= LOW_SURROGATE_END))
+#define IS_SURROGATE_PAIR(hs, ls) (IS_HIGH_SURROGATE(hs) && \
+                                   IS_LOW_SURROGATE(ls))
+#endif
+
+
+#define IS_SURROGATE(wch) (((wch) >= HIGH_SURROGATE_START) &&   \
+                           ((wch) <= LOW_SURROGATE_END))
+#define HIGH_SURROGATE_OF(codept) \
+    (HIGH_SURROGATE_START + (((codept) - 0x10000) >> 10))
+#define LOW_SURROGATE_OF(codept) \
+    (LOW_SURROGATE_START + (((codept) - 0x10000) & 0x3FF))
+#define FROM_SURROGATES(wch1, wch2) \
+    (0x10000 + (((wch1) & 0x3FF) << 10) + ((wch2) & 0x3FF))
 
 #endif

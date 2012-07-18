@@ -847,8 +847,8 @@ static void colour_handler(union control *ctrl, void *dlg,
 	    } else {
 		clear = FALSE;
 		r = conf_get_int_int(conf, CONF_colours, i*3+0);
-		g = conf_get_int_int(conf, CONF_colours, i*3+0);
-		b = conf_get_int_int(conf, CONF_colours, i*3+0);
+		g = conf_get_int_int(conf, CONF_colours, i*3+1);
+		b = conf_get_int_int(conf, CONF_colours, i*3+2);
 	    }
 	    update = TRUE;
 	}
@@ -901,8 +901,8 @@ static void colour_handler(union control *ctrl, void *dlg,
 	     */
 	    if (dlg_coloursel_results(ctrl, dlg, &r, &g, &b)) {
 		conf_set_int_int(conf, CONF_colours, i*3+0, r);
-		conf_set_int_int(conf, CONF_colours, i*3+0, g);
-		conf_set_int_int(conf, CONF_colours, i*3+0, b);
+		conf_set_int_int(conf, CONF_colours, i*3+1, g);
+		conf_set_int_int(conf, CONF_colours, i*3+2, b);
 		clear = FALSE;
 		update = TRUE;
 	    }
@@ -1791,9 +1791,13 @@ void setup_config_box(struct controlbox *b, int midsession,
     ctrl_checkbox(s, "Allow terminal to use xterm 256-colour mode", '2',
 		  HELPCTX(colours_xterm256), conf_checkbox_handler,
 		  I(CONF_xterm_256_colour));
-    ctrl_checkbox(s, "Bolded text is a different colour", 'b',
-		  HELPCTX(colours_bold),
-		  conf_checkbox_handler, I(CONF_bold_colour));
+    ctrl_radiobuttons(s, "Indicate bolded text by changing:", 'b', 3,
+                      HELPCTX(colours_bold),
+                      conf_radiobutton_handler, I(CONF_bold_style),
+                      "The font", I(1),
+                      "The colour", I(2),
+                      "Both", I(3),
+                      NULL);
 
     str = dupprintf("Adjust the precise colours %s displays", appname);
     s = ctrl_getset(b, "Window/Colours", "adjust", str);

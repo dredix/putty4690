@@ -1225,6 +1225,7 @@ static void power_on(Terminal *term, int clear)
     term_print_finish(term);
     term->xterm_mouse = 0;
     set_raw_mouse_mode(term->frontend, FALSE);
+    term->bracketed_paste = FALSE;
     {
 	int i;
 	for (i = 0; i < 256; i++)
@@ -2503,6 +2504,9 @@ static void toggle_mode(Terminal *term, int mode, int query, int state)
 		save_cursor(term, state);
 	    term->disptop = 0;
 	    break;
+	  case 2004:		       /* xterm bracketed paste */
+	    term->bracketed_paste = state ? TRUE : FALSE;
+	    break;
     } else
 	switch (mode) {
 	  case 4:		       /* IRM: set insert mode */
@@ -3016,8 +3020,8 @@ static void term_out(Terminal *term)
 			width = 1;
 		    if (!width)
 			width = (term->cjk_ambig_wide ?
-				 mk_wcwidth_cjk((wchar_t) c) :
-				 mk_wcwidth((wchar_t) c));
+				 mk_wcwidth_cjk((unsigned int) c) :
+				 mk_wcwidth((unsigned int) c));
 
 		    if (term->wrapnext && term->wrap && width > 0) {
 			cline->lattr |= LATTR_WRAPPED;
@@ -4692,7 +4696,7 @@ static termchar *term_bidi_line(Terminal *term, struct termline *ldata,
 		}
 
 		term->wcFrom[it].origwc = term->wcFrom[it].wc =
-		    (wchar_t)uc;
+		    (unsigned int)uc;
 		term->wcFrom[it].index = it;
 	    }
 
@@ -5015,11 +5019,13 @@ static void do_paint(Terminal *term, Context ctx, int may_optimise)
 
 	    break_run = ((tattr ^ attr) & term->attr_mask) != 0;
 
+#ifdef USES_VTLINE_HACK
 	    /* Special hack for VT100 Linedraw glyphs */
 	    if ((tchar >= 0x23BA && tchar <= 0x23BD) ||
                 (j > 0 && (newline[j-1].chr >= 0x23BA &&
                            newline[j-1].chr <= 0x23BD)))
 		break_run = TRUE;
+#endif
 
 	    /*
 	     * Separate out sequences of characters that have the
@@ -5067,10 +5073,17 @@ static void do_paint(Terminal *term, Context ctx, int may_optimise)
 		dirty_run = TRUE;
 	    }
 
-	    if (ccount >= chlen) {
+	    if (ccount+2 > chlen) {
 		chlen = ccount + 256;
 		ch = sresize(ch, chlen, wchar_t);
 	    }
+
+#ifdef PLATFORM_IS_UTF16
+	    if (tchar > 0x10000 && tchar < 0x110000) {
+		ch[ccount++] = (wchar_t) HIGH_SURROGATE_OF(tchar);
+		ch[ccount++] = (wchar_t) LOW_SURROGATE_OF(tchar);
+	    } else
+#endif /* PLATFORM_IS_UTF16 */
 	    ch[ccount++] = (wchar_t) tchar;
 
 	    if (d->cc_next) {
@@ -5094,10 +5107,17 @@ static void do_paint(Terminal *term, Context ctx, int may_optimise)
 			break;
 		    }
 
-		    if (ccount >= chlen) {
+		    if (ccount+2 > chlen) {
 			chlen = ccount + 256;
 			ch = sresize(ch, chlen, wchar_t);
 		    }
+
+#ifdef PLATFORM_IS_UTF16
+		    if (schar > 0x10000 && schar < 0x110000) {
+			ch[ccount++] = (wchar_t) HIGH_SURROGATE_OF(schar);
+			ch[ccount++] = (wchar_t) LOW_SURROGATE_OF(schar);
+		    } else
+#endif /* PLATFORM_IS_UTF16 */
 		    ch[ccount++] = (wchar_t) schar;
 		}
 
@@ -5682,7 +5702,12 @@ void term_do_paste(Terminal *term)
         if (term->paste_buffer)
             sfree(term->paste_buffer);
         term->paste_pos = term->paste_hold = term->paste_len = 0;
-        term->paste_buffer = snewn(len, wchar_t);
+        term->paste_buffer = snewn(len + 12, wchar_t);
+
+        if (term->bracketed_paste) {
+            memcpy(term->paste_buffer, L"\033[200~", 6 * sizeof(wchar_t));
+            term->paste_len += 6;
+        }
 
         p = q = data;
         while (p < data + len) {
@@ -5704,6 +5729,12 @@ void term_do_paste(Terminal *term)
                 p += sel_nl_sz;
             }
             q = p;
+        }
+
+        if (term->bracketed_paste) {
+            memcpy(term->paste_buffer + term->paste_len,
+                   L"\033[201~", 6 * sizeof(wchar_t));
+            term->paste_len += 6;
         }
 
         /* Assume a small paste will be OK in one go. */
