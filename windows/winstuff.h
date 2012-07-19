@@ -145,6 +145,7 @@ typedef struct terminal_tag Terminal;
 #define TICKSPERSEC 1000	       /* GetTickCount returns milliseconds */
 
 #define DEFAULT_CODEPAGE CP_ACP
+#define USES_VTLINE_HACK
 
 typedef HDC Context;
 
@@ -234,15 +235,6 @@ GLOBAL void *logctx;
 			       "All Files (*.*)\0*\0\0\0")
 #define FILTER_DYNLIB_FILES ("Dynamic Library Files (*.dll)\0*.dll\0" \
 				 "All Files (*.*)\0*\0\0\0")
-
-/*
- * On some versions of Windows, it has been known for WM_TIMER to
- * occasionally get its callback time simply wrong, and call us
- * back several minutes early. Defining these symbols enables
- * compensation code in timing.c.
- */
-#define TIMING_SYNC
-#define TIMING_SYNC_TICKCOUNT
 
 /*
  * winnet.c dynamically loads WinSock 2 or WinSock 1 depending on
